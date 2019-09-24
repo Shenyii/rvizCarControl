@@ -1,0 +1,9 @@
+#include "set_destination.h"
+
+int main(int argc,char** argv)
+{
+    ROS_INFO("test the orge!");
+    ros::init(argc,argv,"test the orge");
+    ros::NodeHandle nh;
+    return 0;
+}

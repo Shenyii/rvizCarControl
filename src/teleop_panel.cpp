@@ -1,0 +1,139 @@
+#include <stdio.h>
+#include <QPainter>
+#include <QLineEdit>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QTimer>
+#include <geometry_msgs/Twist.h>
+#include "teleop_panel.h"
+
+namespace rviz_plugin_tutorial
+{
+    pthread_mutex_t hMutex = PTHREAD_MUTEX_INITIALIZER;
+
+    TeleopPanel::TeleopPanel(QWidget* parent)
+    : rviz::Panel(parent),linear_velocity_(0),angular_velocity_(0),velocity_send_flag_(0)
+    {
+        QHBoxLayout* topic_layout = new QHBoxLayout;
+        topic_layout->addWidget(new QLabel("Output Topics"));
+        output_topic_editor_ = new QLineEdit;
+        topic_layout->addWidget(output_topic_editor_);
+
+        drive_widget_ = new DriveWidget;
+
+        //set_initial_position_botton_1 = new Set_Initial_Position;
+
+        agv_state_ = new Agv_State;
+
+        set_destination_ = new Set_Destination;
+
+        path_edit_ = new Path_Edit;
+
+        object_follow_ = new Object_Follow;
+
+        QVBoxLayout* layout = new QVBoxLayout;
+        //layout->addLayout(topic_layout);
+        //layout->addWidget(set_initial_position_botton_1);
+        layout->addWidget(agv_state_);
+        layout->addWidget(set_destination_);
+        layout->addWidget(object_follow_);
+        layout->addWidget(path_edit_);
+        layout->addWidget(drive_widget_);
+        setLayout(layout);
+
+        QTimer* output_timer = new QTimer(this);
+
+        connect(drive_widget_,SIGNAL(outputVelocity(float,float)),this,SLOT(setVel(float,float)));
+        connect(output_topic_editor_,SIGNAL(editingFinished()),this,SLOT(updateTopic()));
+        connect(output_timer,SIGNAL(timeout()),this,SLOT(sendVel()));
+
+        output_timer->start(100);
+
+        velocity_publisher_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel_rviz",1);
+        drive_widget_->setEnabled(true);
+    }
+
+    void TeleopPanel::setVel(float lin,float ang)
+    {
+        linear_velocity_ = lin;
+        angular_velocity_ = ang;
+    }
+
+    void TeleopPanel::updateTopic()
+    {
+        setTopic(output_topic_editor_->text());
+    }
+
+    void TeleopPanel::setTopic(const QString& new_topic)
+    {
+        // if(new_topic != output_topic_)
+        // {
+        //     output_topic_ = new_topic;
+        //     if(output_topic_ == "")
+        //     {
+        //         velocity_publisher_.shutdown();
+        //     }
+        //     else
+        //     {
+        //         //velocity_publisher_ = nh_.advertise<geometry_msgs::Twist>(output_topic_.toStdString(),1);
+        //         velocity_publisher_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel",1);
+        //     }
+
+        //     Q_EMIT configChanged();
+        // }
+        // drive_widget_->setEnabled(output_topic_ !="");
+    }
+
+    void TeleopPanel::sendVel()
+    {
+        if(angular_velocity_ * angular_velocity_ + linear_velocity_ * linear_velocity_ < 0.001)
+        {
+            if(velocity_send_flag_ < 5) velocity_send_flag_++;
+        }
+        else
+        {
+            if(velocity_send_flag_ > 1) velocity_send_flag_--;
+        }
+
+        if(ros::ok() && velocity_publisher_)
+        {
+            geometry_msgs::Twist msg;
+            msg.linear.x = linear_velocity_;
+            msg.linear.y = 0;
+            msg.linear.z = 0;
+            msg.angular.x = 0;
+            msg.angular.y = 0;
+            msg.angular.z = angular_velocity_;
+            if(velocity_send_flag_ < 3) velocity_publisher_.publish(msg);
+        }
+    }
+
+    void TeleopPanel::save(rviz::Config config) const
+    {
+        rviz::Panel::save(config);
+        config.mapSetValue("Topic",output_topic_);
+        //config.mapSetValue("Home position",set_initial_position_botton_1->get_home_position());
+    }
+
+    void TeleopPanel::load(const rviz::Config& config)
+    {
+        rviz::Panel::load(config);
+        QString topic;
+        if(config.mapGetString("Topic",&topic))
+        {
+            output_topic_editor_->setText(topic);
+            updateTopic();
+        }
+
+        if(config.mapGetString("Home position",&topic))
+        {
+            //ROS_INFO("load the home position %s.",topic.toStdString().c_str());
+            //set_initial_position_botton_1->set_output_home_position_editor(topic);
+            //set_initial_position_botton_1->update_home_position();
+        }
+    }
+}
+
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_EXPORT_CLASS(rviz_plugin_tutorial::TeleopPanel,rviz::Panel)

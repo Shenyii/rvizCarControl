@@ -1,0 +1,37 @@
+#include "agv_state.h"
+
+Agv_State::Agv_State(QWidget* parent)
+: QWidget(parent)
+{
+    pub_ = n_.advertise<std_msgs::String>("/agv_state",1);
+
+    button_of_power_ = new QPushButton(this);
+    button_of_power_->setGeometry(QRect(0,35,130,30));
+    button_of_power_->setText("power off");
+    button_of_power_->setStyleSheet("background-color:rgb(102,0,102);");
+    state_of_agv_ = new QTextEdit(this);
+    state_of_agv_->setGeometry(QRect(135,35,165,30));
+    state_of_agv_->setText("click button to start the agv");
+
+    connect(button_of_power_,SIGNAL(clicked(bool)),this,SLOT(clickButtonPower()));
+}
+
+void Agv_State::clickButtonPower()
+{
+    if(button_of_power_->text().toStdString() == "power off")
+    {
+        button_of_power_->setText("power on");
+        state_of_agv_->setText("the agv has startuped");
+        std_msgs::String s_state;
+        s_state.data = "startup";
+        pub_.publish(s_state);
+    }
+    else if(button_of_power_->text().toStdString() == "power on")
+    {
+        button_of_power_->setText("power off");
+        state_of_agv_->setText("click button to start the agv");
+        std_msgs::String s_state;
+        s_state.data = "poweroff";
+        pub_.publish(s_state);
+    }
+}

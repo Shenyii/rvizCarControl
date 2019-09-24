@@ -1,0 +1,3 @@
+<launch>
+    <node name="startup_agv" pkg="rvizCarControl" type="startup_agv" output="screen"/>
+</launch>

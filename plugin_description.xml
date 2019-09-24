@@ -1,0 +1,17 @@
+<library path="lib/librvizCarControl">
+    <class name="rviz_plugin_tutorial/carVocity"
+           type="rviz_plugin_tutorial::TeleopPanel"
+           base_class_type="rviz::Panel">
+        <description>
+            Control car by mouse.
+        </description>
+    </class>
+
+    <class name="rviz_plugin_tutorial/PlantFlag2"
+         type="rviz_plugin_tutorial::PlantFlagTool"
+         base_class_type="rviz::Tool">
+        <description>
+            flags on the ground plane in rviz.
+        </description>
+    </class>
+</library>

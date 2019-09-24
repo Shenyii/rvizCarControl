@@ -1,0 +1,12 @@
+#!/bin/bash
+
+source /opt/ros/indgo/setup.bash
+source ~/ros_test/devel/setup.bash
+
+export ROS_HOSTNAME=ubuntu
+export ROS_MASTER_URI=http://tegra-ubuntu:11311
+
+#export ROS_HOSTNAME=ubuntu
+#export ROS_MASTER_URI=http://agv:11311
+
+roslaunch rvizCarControl rviz_test.launch
